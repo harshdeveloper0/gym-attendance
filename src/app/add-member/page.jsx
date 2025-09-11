@@ -14,6 +14,7 @@ export default function AddMember() {
     feeStatus: "Pending",
     imageBase64: "",
     note: "",
+    session: "Morning", // 👈 added default
   });
   const [preview, setPreview] = useState(null);
 
@@ -64,6 +65,7 @@ export default function AddMember() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4 text-white">
+          {/* Name */}
           <div>
             <label className="block mb-1 text-sm font-medium">Name</label>
             <input
@@ -76,6 +78,7 @@ export default function AddMember() {
             />
           </div>
 
+          {/* Phone */}
           <div>
             <label className="block mb-1 text-sm font-medium">Phone</label>
             <input
@@ -88,6 +91,7 @@ export default function AddMember() {
             />
           </div>
 
+          {/* Email */}
           <div>
             <label className="block mb-1 text-sm font-medium">Email</label>
             <input
@@ -114,7 +118,21 @@ export default function AddMember() {
             </select>
           </div>
 
-          {/* ✅ Note field */}
+          {/* ✅ Session field */}
+          <div>
+            <label className="block mb-1 text-sm font-medium">Session</label>
+            <select
+              name="session"
+              value={form.session}
+              onChange={handleChange}
+              className="w-full p-2 bg-white/10 border border-white/30 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-400"
+            >
+              <option className="bg-black text-white">Morning</option>
+              <option className="bg-black text-white">Evening</option>
+            </select>
+          </div>
+
+          {/* Note */}
           <div>
             <label className="block mb-1 text-sm font-medium">Note</label>
             <textarea

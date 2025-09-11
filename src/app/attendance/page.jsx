@@ -4,8 +4,13 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import Link from "next/link";
 import Image from "next/image";
-import { Search, Calendar, CheckCircle2, XCircle, Users } from "lucide-react";
-import Navbar from "@/components/Navbar";
+import {
+  Search,
+  Calendar,
+  CheckCircle2,
+  XCircle,
+  Users,
+} from "lucide-react";
 
 export default function AttendancePage() {
   const [members, setMembers] = useState([]);
@@ -14,6 +19,7 @@ export default function AttendancePage() {
     new Date().toISOString().split("T")[0]
   );
   const [searchTerm, setSearchTerm] = useState("");
+  const [sessionFilter, setSessionFilter] = useState("All"); // Morning | Evening | All
 
   useEffect(() => {
     const fetchData = async () => {
@@ -56,134 +62,184 @@ export default function AttendancePage() {
     }
   };
 
-  const filteredMembers = members.filter(
-    (member) =>
+  // 🔍 Search + Session filter
+  const filteredMembers = members.filter((member) => {
+    const matchesSearch =
       member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      member.phone.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+      member.phone.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesSession =
+      sessionFilter === "All" || member.session === sessionFilter;
+
+    return matchesSearch && matchesSession;
+  });
+
+  // 📊 Stats Counters - based only on filtered members
+  const totalPresent = filteredMembers.filter(
+    (m) => attendanceMap[m._id] === "Present"
+  ).length;
+
+  const totalAbsent = filteredMembers.filter(
+    (m) => attendanceMap[m._id] === "Absent"
+  ).length;
+
+  const totalMarked = totalPresent + totalAbsent;
+  const totalNotMarked = filteredMembers.length - totalMarked;
 
   return (
-    <>
-    
-    <div className="  p-6 text-white">
-      
-      {/* Header Section */}
-      <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
-        <h1 className="text-3xl font-extrabold tracking-tight flex items-center gap-2">
-          <Users size={28} className="text-blue-400" /> Attendance
-        </h1>
+    <div className="flex justify-center items-start p-6">
+      <div className="w-full max-w-7xl h-[80vh] overflow-auto bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl rounded-2xl p-4">
+        {/* Header */}
+        <div className="sticky top-0 z-20 mb-4 bg-gray-900/80 backdrop-blur-lg rounded-xl p-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <h1 className="text-lg font-bold text-white flex items-center gap-2">
+            <Users size={22} className="text-blue-400" /> Attendance
+          </h1>
 
-        <div className="flex flex-wrap gap-3 items-center w-full md:w-auto">
-          {/* 🔍 Search Bar */}
-          <div className="relative w-full sm:w-64">
-            <Search
-              size={18}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-            />
-            <input
-              type="text"
-              placeholder="Search by name or phone..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-white/10 border border-white/20 text-white pl-10 pr-3 py-2 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
-            />
+          <div className="flex flex-wrap gap-2 items-center">
+            {/* 🔍 Search */}
+            <div className="relative w-48">
+              <Search
+                size={16}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              />
+              <input
+                type="text"
+                placeholder="Search..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full bg-gray-800 border border-gray-700 text-white pl-9 pr-3 py-1.5 rounded-lg placeholder-gray-400 focus:ring-2 focus:ring-blue-500 text-sm"
+              />
+            </div>
+
+            {/* 📅 Date Picker */}
+            <div className="flex items-center gap-2 bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm">
+              <Calendar size={16} className="text-gray-300" />
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="bg-transparent text-white focus:outline-none cursor-pointer text-sm"
+              />
+            </div>
+
+            {/* 🔽 Session Filter */}
+            <select
+              value={sessionFilter}
+              onChange={(e) => setSessionFilter(e.target.value)}
+              className="bg-gray-800 border border-gray-700 text-white px-3 py-1.5 rounded-lg text-sm cursor-pointer"
+            >
+              <option value="All">All Members</option>
+              <option value="Morning">Morning</option>
+              <option value="Evening">Evening</option>
+            </select>
+
+            {/* 🔗 Members Page */}
+            <Link
+              href="/members"
+              className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg shadow text-sm"
+            >
+              Members
+            </Link>
           </div>
+        </div>
 
-          {/* 📅 Date Picker */}
-          <div className="flex items-center gap-2 bg-white/10 border border-white/20 rounded-lg px-3 py-2">
-            <Calendar size={18} className="text-gray-300" />
-            <input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="bg-transparent text-white focus:outline-none cursor-pointer"
-            />
+        {/* 📊 Attendance Summary */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4 text-center">
+          <div className="bg-green-600/20 border border-green-500/30 p-2 rounded-lg">
+            <p className="text-green-400 font-bold">{totalPresent}</p>
+            <p className="text-xs text-gray-300">Present</p>
           </div>
+          <div className="bg-red-600/20 border border-red-500/30 p-2 rounded-lg">
+            <p className="text-red-400 font-bold">{totalAbsent}</p>
+            <p className="text-xs text-gray-300">Absent</p>
+          </div>
+          <div className="bg-yellow-600/20 border border-yellow-500/30 p-2 rounded-lg">
+            <p className="text-yellow-400 font-bold">{totalNotMarked}</p>
+            <p className="text-xs text-gray-300">Not Marked</p>
+          </div>
+          <div className="bg-blue-600/20 border border-blue-500/30 p-2 rounded-lg">
+            <p className="text-blue-400 font-bold">{filteredMembers.length}</p>
+            <p className="text-xs text-gray-300">Total ({sessionFilter})</p>
+          </div>
+        </div>
 
-          {/* 🔗 Members Page Button */}
-          <Link href="/members">
-            <button className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg shadow-md transition">
-              Go to Members
-            </button>
-          </Link>
+        {/* Members Grid */}
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {filteredMembers.map((member) => (
+            <div
+              key={member._id}
+              className="bg-gray-800/70 border border-gray-700 rounded-lg p-3 shadow hover:shadow-md transition text-sm"
+            >
+              {/* 👤 Member Info */}
+              <div className="flex items-center gap-3 mb-2">
+                <Image
+                  src={member.image || "/default-member.avif"}
+                  alt={member.name}
+                  width={40}
+                  height={40}
+                  className="rounded-full border border-white/20 object-cover"
+                />
+                <div>
+                  <h2 className="text-white font-medium text-sm">
+                    {member.name}
+                  </h2>
+                  <p className="text-gray-400 text-xs">{member.phone}</p>
+                  <p className="text-gray-500 text-xs">
+                    {member.session || "No Session"}
+                  </p>
+                </div>
+              </div>
+
+              {/* Attendance Buttons */}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => markAttendance(member._id, "Present")}
+                  className={`flex-1 flex items-center justify-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition ${
+                    attendanceMap[member._id] === "Present"
+                      ? "bg-green-600 text-white"
+                      : "bg-white/10 text-green-400 hover:bg-green-500/20"
+                  }`}
+                >
+                  <CheckCircle2 size={14} /> Present
+                </button>
+
+                <button
+                  onClick={() => markAttendance(member._id, "Absent")}
+                  className={`flex-1 flex items-center justify-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition ${
+                    attendanceMap[member._id] === "Absent"
+                      ? "bg-red-600 text-white"
+                      : "bg-white/10 text-red-400 hover:bg-red-500/20"
+                  }`}
+                >
+                  <XCircle size={14} /> Absent
+                </button>
+              </div>
+
+              {/* Status */}
+              <p className="mt-2 text-xs text-gray-300">
+                Status:{" "}
+                <span
+                  className={`font-semibold ${
+                    attendanceMap[member._id] === "Present"
+                      ? "text-green-400"
+                      : attendanceMap[member._id] === "Absent"
+                      ? "text-red-400"
+                      : "text-yellow-400"
+                  }`}
+                >
+                  {attendanceMap[member._id] || "Not Marked"}
+                </span>
+              </p>
+            </div>
+          ))}
+
+          {filteredMembers.length === 0 && (
+            <p className="text-center text-gray-400 col-span-full text-sm">
+              No members found
+            </p>
+          )}
         </div>
       </div>
-
-      {/* Members Grid */}
-      <div className="grid lg:grid-cols-3 md:grid-cols-2 sm:grid-cols-1 gap-6">
-        {filteredMembers.map((member) => (
-          <div
-            key={member._id}
-            className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-5 shadow-lg hover:shadow-blue-500/20 transition"
-          >
-            {/* 👤 Member Image */}
-            <div className="flex items-center gap-4 mb-4">
-              <Image
-                src={member.image || "/default-member.avif"} 
-                alt={member.name}
-                width={60}
-                height={60}
-                className="rounded-full border border-white/20 object-cover"
-              />
-              <div>
-                <h2 className="text-lg font-semibold">{member.name}</h2>
-                <p className="text-sm text-gray-300">{member.phone}</p>
-                <p className="text-sm text-gray-400">
-                  {member.membershipType || "Standard"}
-                </p>
-              </div>
-            </div>
-
-            {/* Buttons */}
-            <div className="mt-4 flex gap-3">
-              <button
-                onClick={() => markAttendance(member._id, "Present")}
-                className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition ${
-                  attendanceMap[member._id] === "Present"
-                    ? "bg-green-600 text-white"
-                    : "bg-white/10 text-green-400 hover:bg-green-500/20"
-                }`}
-              >
-                <CheckCircle2 size={16} /> Present
-              </button>
-
-              <button
-                onClick={() => markAttendance(member._id, "Absent")}
-                className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition ${
-                  attendanceMap[member._id] === "Absent"
-                    ? "bg-red-600 text-white"
-                    : "bg-white/10 text-red-400 hover:bg-red-500/20"
-                }`}
-              >
-                <XCircle size={16} /> Absent
-              </button>
-            </div>
-
-            {/* Status */}
-            <p className="mt-3 text-sm">
-              Status:{" "}
-              <span
-                className={`font-semibold ${
-                  attendanceMap[member._id] === "Present"
-                    ? "text-green-400"
-                    : attendanceMap[member._id] === "Absent"
-                    ? "text-red-400"
-                    : "text-yellow-400"
-                }`}
-              >
-                {attendanceMap[member._id] || "Not Marked"}
-              </span>
-            </p>
-          </div>
-        ))}
-
-        {filteredMembers.length === 0 && (
-          <p className="text-center text-gray-400 col-span-full">
-            No members found
-          </p>
-        )}
-      </div>
     </div>
-    </>
   );
 }

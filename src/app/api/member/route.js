@@ -7,7 +7,17 @@ export async function POST(request) {
   try {
     await connectDB();
     const body = await request.json();
-    const { name, phone, email, address, emergencyContact, feeStatus = "Pending", imageBase64, note } = body;
+    const { 
+      name, 
+      phone, 
+      email, 
+      address, 
+      emergencyContact, 
+      feeStatus = "Pending", 
+      imageBase64, 
+      note,
+      session = "Morning" // 👈 added default
+    } = body;
 
     if (!name || !phone) {
       return NextResponse.json({ success: false, message: "Name and phone are required" }, { status: 400 });
@@ -35,7 +45,8 @@ export async function POST(request) {
       emergencyContact,
       feeStatus,
       image: imageUrl,
-      note   
+      note,
+      session // 👈 save session
     });
 
     return NextResponse.json({
@@ -60,6 +71,7 @@ export async function GET(request) {
     const search = searchParams.get("search") || "";
     const feeStatus = searchParams.get("feeStatus") || "";
     const active = searchParams.get("isActive");
+    const session = searchParams.get("session") || ""; // 👈 filter by session
 
     let query = {};
 
@@ -68,12 +80,13 @@ export async function GET(request) {
         { name: { $regex: search, $options: "i" } },
         { phone: { $regex: search, $options: "i" } },
         { email: { $regex: search, $options: "i" } },
-        { note: { $regex: search, $options: "i" } } // ✅ searchable by note also
+        { note: { $regex: search, $options: "i" } }
       ];
     }
 
     if (feeStatus) query.feeStatus = feeStatus;
     if (active !== null && active !== "") query.isActive = active === "true";
+    if (session) query.session = session;
 
     const skip = (page - 1) * limit;
     const members = await Member.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit);

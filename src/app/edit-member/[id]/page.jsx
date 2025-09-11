@@ -17,7 +17,8 @@ export default function EditMemberPage() {
     feeStatus: "Pending",
     isActive: true,
     image: "",
-    note: "", 
+    note: "",
+    session: "Morning",
   });
 
   const [loading, setLoading] = useState(true);
@@ -37,7 +38,8 @@ export default function EditMemberPage() {
             feeStatus: found.feeStatus,
             isActive: found.isActive,
             image: found.image || "",
-            note: found.note || "", 
+            note: found.note || "",
+            session: found.session || "Morning",
           });
         } else {
           toast.error("Member not found");
@@ -84,23 +86,24 @@ export default function EditMemberPage() {
     );
 
   return (
-    <div className="flex h-screen border items-center justify-center p-10">
-      <div className="  h-full backdrop-blur-md bg-white/10 border border-white/20 shadow-xl rounded-xl p-6 w-full max-w-sm text-white">
-        <h2 className="text-xl font-bold mb-4 text-center">Edit Member</h2>
+    <div className=" flex items-center justify-center backdrop-blur-lg border-b border-white/20 shadow-2xl rounded-2xl  p-6">
+      <div className="w-full max-w-lg h-[80vh] overflow-auto bg-white/10 backdrop-blur-md border border-white/20 shadow-xl rounded-2xl p-8 text-white">
 
         {/* Profile Image Preview */}
-        <div className="flex flex-col items-center mb-4">
+        <div className="flex flex-col items-center mb-6">
           <Image
             src={form.image || "/default-member.avif"}
             alt="Member"
-            width={60}
-            height={60}
-            className="rounded-full object-cover border border-white/30 shadow-md"
+            width={80}
+            height={80}
+            className="rounded-full object-cover border border-white/30 shadow-lg"
           />
-          <p className="text-xs text-white/70 mt-1">Profile Picture Preview</p>
+          <p className="text-xs text-white/60 mt-2">
+            Profile Picture Preview
+          </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="w-[]">
+        <form onSubmit={handleSubmit} className="space-y-4">
           {/* Image URL */}
           <div>
             <label className="block text-sm font-medium mb-1">Image URL</label>
@@ -109,18 +112,18 @@ export default function EditMemberPage() {
               value={form.image}
               onChange={(e) => setForm({ ...form, image: e.target.value })}
               placeholder="https://example.com/photo.jpg"
-              className="w-full px-3 py-1.5 rounded-lg text-sm bg-white/10 border border-white/20 text-white placeholder-white/60 focus:ring-2 focus:ring-green-500 outline-none"
+              className="w-full px-3 py-2 rounded-lg text-sm bg-white/10 border border-white/20 text-white placeholder-white/50 focus:ring-2 focus:ring-green-500 outline-none"
             />
           </div>
 
           {/* Name */}
           <div>
-            <label className="block text-sm font-medium mb-1">Name</label>
+            <label className="block text-sm font-medium mb-1">Full Name</label>
             <input
               type="text"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="w-full px-3 py-1.5 rounded-lg text-sm bg-white/10 border border-white/20 text-white placeholder-white/60 focus:ring-2 focus:ring-green-500 outline-none"
+              className="w-full px-3 py-2 rounded-lg text-sm bg-white/10 border border-white/20 text-white placeholder-white/50 focus:ring-2 focus:ring-green-500 outline-none"
               required
             />
           </div>
@@ -132,7 +135,7 @@ export default function EditMemberPage() {
               type="text"
               value={form.phone}
               onChange={(e) => setForm({ ...form, phone: e.target.value })}
-              className="w-full px-3 py-1.5 rounded-lg text-sm bg-white/10 border border-white/20 text-white placeholder-white/60 focus:ring-2 focus:ring-green-500 outline-none"
+              className="w-full px-3 py-2 rounded-lg text-sm bg-white/10 border border-white/20 text-white placeholder-white/50 focus:ring-2 focus:ring-green-500 outline-none"
               required
             />
           </div>
@@ -144,8 +147,21 @@ export default function EditMemberPage() {
               type="email"
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
-              className="w-full px-3 py-1.5 rounded-lg text-sm bg-white/10 border border-white/20 text-white placeholder-white/60 focus:ring-2 focus:ring-green-500 outline-none"
+              className="w-full px-3 py-2 rounded-lg text-sm bg-white/10 border border-white/20 text-white placeholder-white/50 focus:ring-2 focus:ring-green-500 outline-none"
             />
+          </div>
+
+          {/* Session */}
+          <div>
+            <label className="block text-sm font-medium mb-1">Session</label>
+            <select
+              value={form.session}
+              onChange={(e) => setForm({ ...form, session: e.target.value })}
+              className="w-full px-3 py-2 rounded-lg text-sm bg-white/10 border border-white/20 text-white focus:ring-2 focus:ring-green-500 outline-none"
+            >
+              <option value="Morning">🌅 Morning</option>
+              <option value="Evening">🌙 Evening</option>
+            </select>
           </div>
 
           {/* Fee Status */}
@@ -154,11 +170,11 @@ export default function EditMemberPage() {
             <select
               value={form.feeStatus}
               onChange={(e) => setForm({ ...form, feeStatus: e.target.value })}
-              className="w-full px-3 py-1.5 rounded-lg text-sm bg-white/10 border border-white/20 text-white focus:ring-2 focus:ring-green-500 outline-none"
+              className="w-full px-3 py-2 rounded-lg text-sm bg-white/10 border border-white/20 text-white focus:ring-2 focus:ring-green-500 outline-none"
             >
-              <option value="Pending">Pending</option>
-              <option value="Paid">Paid</option>
-              <option value="Advance Paid">Advance Paid</option>
+              <option value="Pending">⏳ Pending</option>
+              <option value="Paid">✅ Paid</option>
+              <option value="Advance Paid">💰 Advance Paid</option>
             </select>
           </div>
 
@@ -173,31 +189,31 @@ export default function EditMemberPage() {
             <label className="text-sm">Active Member</label>
           </div>
 
-          {/* ✅ Note field */}
+          {/* Note */}
           <div>
-            <label className="block text-sm font-medium mb-1">Note</label>
+            <label className="block text-sm font-medium mb-1">Notes</label>
             <textarea
               value={form.note}
               onChange={(e) => setForm({ ...form, note: e.target.value })}
               placeholder="Enter additional notes here..."
               rows={3}
-              className="w-full px-3 py-1.5 rounded-lg text-sm bg-white/10 border border-white/20 text-white placeholder-white/60 focus:ring-2 focus:ring-green-500 outline-none"
+              className="w-full px-3 py-2 rounded-lg text-sm bg-white/10 border border-white/20 text-white placeholder-white/50 focus:ring-2 focus:ring-green-500 outline-none"
             />
           </div>
 
           {/* Buttons */}
-          <div className="flex gap-3 mt-4">
+          <div className="flex gap-4 pt-4">
             <button
               type="submit"
               className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 text-sm"
             >
-              Update Member
+              💾 Update
             </button>
             <Link
               href="/members"
               className="flex-1 text-center bg-white/20 hover:bg-white/30 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 text-sm"
             >
-              Go back
+              ↩️ Back
             </Link>
           </div>
         </form>

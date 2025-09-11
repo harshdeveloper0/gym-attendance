@@ -6,7 +6,7 @@ const AttendanceSchema = new mongoose.Schema({
     ref: 'Member',
     required: true
   },
-  memberName: {   // 👈 naam bhi store karenge
+  memberName: { 
     type: String,
     required: true
   },

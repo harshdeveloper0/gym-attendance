@@ -24,17 +24,22 @@ const MemberSchema = new mongoose.Schema({
     enum: ['Paid', 'Pending', 'Advance Paid'],
     default: 'Pending'
   },
-  note:{
-    type:String,
-    deafult:"clear",
+  note: {
+    type: String,
+    default: "clear"
   },
   isActive: {
     type: Boolean,
     default: true
   },
   image: {
-    type: String, 
+    type: String,
     default: ""
+  },
+  session: {
+    type: String,
+    enum: ['Morning', 'Evening'],
+    default: 'Morning'
   }
 }, {
   timestamps: true
