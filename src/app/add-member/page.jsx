@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Upload } from "lucide-react";
+import Image from "next/image";
+import toast from "react-hot-toast";
 
 export default function AddMember() {
   const router = useRouter();
@@ -14,9 +16,10 @@ export default function AddMember() {
     feeStatus: "Pending",
     imageBase64: "",
     note: "",
-    session: "Morning", // 👈 added default
+    session: "Morning",
   });
-  const [preview, setPreview] = useState(null);
+
+  const [preview, setPreview] = useState("");
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -25,6 +28,7 @@ export default function AddMember() {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
+
     const reader = new FileReader();
     reader.onloadend = () => {
       setForm({ ...form, imageBase64: reader.result });
@@ -43,111 +47,44 @@ export default function AddMember() {
 
     const data = await res.json();
     if (data.success) {
-      alert("Member added");
+      toast.success("Member added successfully");
       router.push("/members");
     } else {
-      alert(data.message);
+      toast.error(data.message || "Failed to add member");
     }
   };
 
   return (
-    <div className="flex items-center justify-center p-10">
-      <div className="w-full max-w-xl backdrop-blur-md bg-white/10 border border-white/20 rounded-2xl shadow-xl p-6">
-        <div className="flex items-center justify-between mb-6 text-white">
-          <h2 className="text-2xl sm:text-3xl font-bold">Add New Member</h2>
+    <div className="flex items-center justify-center mt-[-50px] backdrop-blur-lg border-b border-white/20 shadow-2xl rounded-2xl p-6">
+      <div className="w-full max-w-lg h-[80vh] overflow-auto bg-white/10 backdrop-blur-md border border-white/20 shadow-xl rounded-2xl p-8 text-white">
+        {/* Title and Back Link */}
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold">➕ Add New Member</h2>
           <Link
             href="/members"
-            className="flex items-center gap-2 text-blue-300 hover:text-white text-sm sm:text-base"
+            className="text-blue-300 hover:text-white text-sm flex items-center gap-1"
           >
-            <ArrowLeft size={18} />
-            Back to Members
+            <ArrowLeft size={16} /> Back
           </Link>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 text-white">
-          {/* Name */}
-          <div>
-            <label className="block mb-1 text-sm font-medium">Name</label>
-            <input
-              name="name"
-              value={form.name}
-              onChange={handleChange}
-              placeholder="Enter full name"
-              required
-              className="w-full p-2 bg-white/10 border border-white/30 rounded-lg text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
-            />
-          </div>
+        {/* Profile Preview */}
+        <div className="flex flex-col items-center mb-6">
+          <Image
+            src={preview || "/default-member.avif"}
+            alt="Preview"
+            width={80}
+            height={80}
+            className="rounded-full object-cover border border-white/30 shadow-lg"
+          />
+          <p className="text-xs text-white/60 mt-2">Profile Picture Preview</p>
+        </div>
 
-          {/* Phone */}
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Upload */}
           <div>
-            <label className="block mb-1 text-sm font-medium">Phone</label>
-            <input
-              name="phone"
-              value={form.phone}
-              onChange={handleChange}
-              placeholder="Enter phone number"
-              required
-              className="w-full p-2 bg-white/10 border border-white/30 rounded-lg text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
-            />
-          </div>
-
-          {/* Email */}
-          <div>
-            <label className="block mb-1 text-sm font-medium">Email</label>
-            <input
-              name="email"
-              value={form.email}
-              onChange={handleChange}
-              placeholder="Enter email (optional)"
-              className="w-full p-2 bg-white/10 border border-white/30 rounded-lg text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
-            />
-          </div>
-
-          {/* Fee Status */}
-          <div>
-            <label className="block mb-1 text-sm font-medium">Fee Status</label>
-            <select
-              name="feeStatus"
-              value={form.feeStatus}
-              onChange={handleChange}
-              className="w-full p-2 bg-white/10 border border-white/30 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-400"
-            >
-              <option className="bg-black text-white">Pending</option>
-              <option className="bg-black text-white">Paid</option>
-              <option className="bg-black text-white">Advance Paid</option>
-            </select>
-          </div>
-
-          {/* ✅ Session field */}
-          <div>
-            <label className="block mb-1 text-sm font-medium">Session</label>
-            <select
-              name="session"
-              value={form.session}
-              onChange={handleChange}
-              className="w-full p-2 bg-white/10 border border-white/30 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-400"
-            >
-              <option className="bg-black text-white">Morning</option>
-              <option className="bg-black text-white">Evening</option>
-            </select>
-          </div>
-
-          {/* Note */}
-          <div>
-            <label className="block mb-1 text-sm font-medium">Note</label>
-            <textarea
-              name="note"
-              value={form.note}
-              onChange={handleChange}
-              placeholder="Enter note (optional)"
-              rows={3}
-              className="w-full p-2 bg-white/10 border border-white/30 rounded-lg text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
-            />
-          </div>
-
-          {/* Profile Image */}
-          <div>
-            <label className="block mb-1 text-sm font-medium">
+            <label className="block text-sm font-medium mb-1">
               Profile Image
             </label>
             <div className="flex items-center gap-4">
@@ -161,23 +98,104 @@ export default function AddMember() {
                   className="hidden"
                 />
               </label>
-              {preview && (
-                <img
-                  src={preview}
-                  alt="Preview"
-                  className="w-16 h-16 rounded-full object-cover border border-white/30"
-                />
-              )}
             </div>
           </div>
 
-          {/* Submit */}
-          <button
-            type="submit"
-            className="w-full bg-[#746555] hover:bg-[#42392f] text-white font-semibold py-2 rounded-xl transition-all"
-          >
-            Add Member
-          </button>
+          {/* Name */}
+          <div>
+            <label className="block text-sm font-medium mb-1">Full Name</label>
+            <input
+              name="name"
+              value={form.name}
+              onChange={handleChange}
+              placeholder="Enter full name"
+              required
+              className="w-full px-3 py-2 rounded-lg text-sm bg-white/10 border border-white/20 text-white placeholder-white/50 focus:ring-2 focus:ring-green-500 outline-none"
+            />
+          </div>
+
+          {/* Phone */}
+          <div>
+            <label className="block text-sm font-medium mb-1">Phone</label>
+            <input
+              name="phone"
+              value={form.phone}
+              onChange={handleChange}
+              placeholder="Enter phone number"
+              required
+              className="w-full px-3 py-2 rounded-lg text-sm bg-white/10 border border-white/20 text-white placeholder-white/50 focus:ring-2 focus:ring-green-500 outline-none"
+            />
+          </div>
+
+          {/* Email */}
+          <div>
+            <label className="block text-sm font-medium mb-1">Email</label>
+            <input
+              name="email"
+              value={form.email}
+              onChange={handleChange}
+              placeholder="Enter email (optional)"
+              className="w-full px-3 py-2 rounded-lg text-sm bg-white/10 border border-white/20 text-white placeholder-white/50 focus:ring-2 focus:ring-green-500 outline-none"
+            />
+          </div>
+
+          {/* Session */}
+          <div>
+            <label className="block text-sm font-medium mb-1">Session</label>
+            <select
+              name="session"
+              value={form.session}
+              onChange={handleChange}
+              className="w-full px-3 py-2 rounded-lg text-sm bg-white/10 border border-white/20 text-white focus:ring-2 focus:ring-green-500 outline-none"
+            >
+              <option value="Morning">🌅 Morning</option>
+              <option value="Evening">🌙 Evening</option>
+            </select>
+          </div>
+
+          {/* Fee Status */}
+          <div>
+            <label className="block text-sm font-medium mb-1">Fee Status</label>
+            <select
+              name="feeStatus"
+              value={form.feeStatus}
+              onChange={handleChange}
+              className="w-full px-3 py-2 rounded-lg text-sm bg-white/10 border border-white/20 text-white focus:ring-2 focus:ring-green-500 outline-none"
+            >
+              <option value="Pending">⏳ Pending</option>
+              <option value="Paid">✅ Paid</option>
+              <option value="Advance Paid">💰 Advance Paid</option>
+            </select>
+          </div>
+
+          {/* Notes */}
+          <div>
+            <label className="block text-sm font-medium mb-1">Notes</label>
+            <textarea
+              name="note"
+              value={form.note}
+              onChange={handleChange}
+              placeholder="Enter additional notes here..."
+              rows={3}
+              className="w-full px-3 py-2 rounded-lg text-sm bg-white/10 border border-white/20 text-white placeholder-white/50 focus:ring-2 focus:ring-green-500 outline-none"
+            />
+          </div>
+
+          {/* Buttons */}
+          <div className="flex gap-4 pt-4">
+            <button
+              type="submit"
+              className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 text-sm"
+            >
+              ➕ Add Member
+            </button>
+            <Link
+              href="/members"
+              className="flex-1 text-center bg-white/20 hover:bg-white/30 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 text-sm"
+            >
+              ↩️ Back
+            </Link>
+          </div>
         </form>
       </div>
     </div>

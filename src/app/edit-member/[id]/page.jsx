@@ -86,8 +86,8 @@ export default function EditMemberPage() {
     );
 
   return (
-    <div className=" flex items-center justify-center backdrop-blur-lg border-b border-white/20 shadow-2xl rounded-2xl  p-6">
-      <div className="w-full max-w-lg h-[80vh] overflow-auto bg-white/10 backdrop-blur-md border border-white/20 shadow-xl rounded-2xl p-8 text-white">
+    <div className=" flex items-center justify-center mt-[-50px] backdrop-blur-lg border-b border-white/20 shadow-2xl rounded-2xl  p-6">
+      <div className="w-full  max-w-lg h-[80vh] overflow-auto bg-white/10 backdrop-blur-md border border-white/20 shadow-xl rounded-2xl p-8 text-white">
 
         {/* Profile Image Preview */}
         <div className="flex flex-col items-center mb-6">

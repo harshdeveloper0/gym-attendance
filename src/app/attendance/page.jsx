@@ -19,14 +19,16 @@ export default function AttendancePage() {
     new Date().toISOString().split("T")[0]
   );
   const [searchTerm, setSearchTerm] = useState("");
-  const [sessionFilter, setSessionFilter] = useState("All"); // Morning | Evening | All
+  const [sessionFilter, setSessionFilter] = useState("All");
+  const [fadeHeader, setFadeHeader] = useState(false);
+  const [lastScroll, setLastScroll] = useState(0);
 
+  //Fetch Members & Attendance
   useEffect(() => {
     const fetchData = async () => {
       try {
         const res = await axios.get(`/api/member`);
-        const allMembers = res.data.data.members;
-        setMembers(allMembers);
+        setMembers(res.data.data.members);
 
         const attRes = await axios.get(`/api/attendance?date=${selectedDate}`);
         const records = attRes.data.data.attendance;
@@ -35,23 +37,29 @@ export default function AttendancePage() {
         records.forEach((r) => {
           attData[r.memberId] = r.status;
         });
-
         setAttendanceMap(attData);
       } catch (err) {
         console.error("Error:", err);
       }
     };
-
     fetchData();
   }, [selectedDate]);
 
+  //  Fade header on scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollY = window.scrollY;
+      if (scrollY > lastScroll) setFadeHeader(true);
+      else setFadeHeader(false); 
+      setLastScroll(scrollY);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [lastScroll]);
+
   const markAttendance = async (memberId, status) => {
     try {
-      setAttendanceMap((prev) => ({
-        ...prev,
-        [memberId]: status,
-      }));
-
+      setAttendanceMap((prev) => ({ ...prev, [memberId]: status }));
       await axios.post(`/api/attendance`, {
         memberId,
         date: selectedDate,
@@ -62,42 +70,42 @@ export default function AttendancePage() {
     }
   };
 
-  // 🔍 Search + Session filter
-  const filteredMembers = members.filter((member) => {
+  // Filter members
+  const filteredMembers = members.filter((m) => {
     const matchesSearch =
-      member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      member.phone.toLowerCase().includes(searchTerm.toLowerCase());
-
+      m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      m.phone.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesSession =
-      sessionFilter === "All" || member.session === sessionFilter;
-
+      sessionFilter === "All" || m.session === sessionFilter;
     return matchesSearch && matchesSession;
   });
 
-  // 📊 Stats Counters - based only on filtered members
+  //  Stats
   const totalPresent = filteredMembers.filter(
     (m) => attendanceMap[m._id] === "Present"
   ).length;
-
   const totalAbsent = filteredMembers.filter(
     (m) => attendanceMap[m._id] === "Absent"
   ).length;
-
   const totalMarked = totalPresent + totalAbsent;
   const totalNotMarked = filteredMembers.length - totalMarked;
 
   return (
-    <div className="flex justify-center items-start p-6">
-      <div className="w-full max-w-7xl h-[80vh] overflow-auto bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl rounded-2xl p-4">
-        {/* Header */}
-        <div className="sticky top-0 z-20 mb-4 bg-gray-900/80 backdrop-blur-lg rounded-xl p-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex mt-[-50px] justify-center items-start p-4 sm:p-6">
+      <div className="w-full max-w-7xl bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl rounded-2xl p-4 sm:p-6">
+        {/* header */}
+        <div
+          className={`sticky top-0 z-20 mb-4 transition-opacity duration-300 ${
+            fadeHeader ? "opacity-0" : "opacity-100"
+          } bg-gray-900/80 backdrop-blur-lg rounded-xl p-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between`}
+        >
           <h1 className="text-lg font-bold text-white flex items-center gap-2">
             <Users size={22} className="text-blue-400" /> Attendance
           </h1>
 
           <div className="flex flex-wrap gap-2 items-center">
-            {/* 🔍 Search */}
-            <div className="relative w-48">
+            {/* Search */}
+            <div className="relative w-40 sm:w-48">
               <Search
                 size={16}
                 className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
@@ -111,7 +119,7 @@ export default function AttendancePage() {
               />
             </div>
 
-            {/* 📅 Date Picker */}
+            {/*  Date Picker */}
             <div className="flex items-center gap-2 bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm">
               <Calendar size={16} className="text-gray-300" />
               <input
@@ -122,7 +130,7 @@ export default function AttendancePage() {
               />
             </div>
 
-            {/* 🔽 Session Filter */}
+            {/*  Session Filter */}
             <select
               value={sessionFilter}
               onChange={(e) => setSessionFilter(e.target.value)}
@@ -133,7 +141,7 @@ export default function AttendancePage() {
               <option value="Evening">Evening</option>
             </select>
 
-            {/* 🔗 Members Page */}
+            {/*  Members Page */}
             <Link
               href="/members"
               className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg shadow text-sm"
@@ -143,7 +151,7 @@ export default function AttendancePage() {
           </div>
         </div>
 
-        {/* 📊 Attendance Summary */}
+        {/*  Attendance Summary */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4 text-center">
           <div className="bg-green-600/20 border border-green-500/30 p-2 rounded-lg">
             <p className="text-green-400 font-bold">{totalPresent}</p>
@@ -168,15 +176,14 @@ export default function AttendancePage() {
           {filteredMembers.map((member) => (
             <div
               key={member._id}
-              className="bg-gray-800/70 border border-gray-700 rounded-lg p-3 shadow hover:shadow-md transition text-sm"
+              className="bg-gray-800/70 border border-gray-700 rounded-lg p-3 shadow hover:shadow-lg transition text-sm"
             >
-              {/* 👤 Member Info */}
               <div className="flex items-center gap-3 mb-2">
                 <Image
                   src={member.image || "/default-member.avif"}
                   alt={member.name}
-                  width={40}
-                  height={40}
+                  width={48}
+                  height={48}
                   className="rounded-full border border-white/20 object-cover"
                 />
                 <div>
@@ -190,7 +197,6 @@ export default function AttendancePage() {
                 </div>
               </div>
 
-              {/* Attendance Buttons */}
               <div className="flex gap-2">
                 <button
                   onClick={() => markAttendance(member._id, "Present")}
@@ -202,7 +208,6 @@ export default function AttendancePage() {
                 >
                   <CheckCircle2 size={14} /> Present
                 </button>
-
                 <button
                   onClick={() => markAttendance(member._id, "Absent")}
                   className={`flex-1 flex items-center justify-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition ${
@@ -215,7 +220,6 @@ export default function AttendancePage() {
                 </button>
               </div>
 
-              {/* Status */}
               <p className="mt-2 text-xs text-gray-300">
                 Status:{" "}
                 <span
@@ -232,7 +236,6 @@ export default function AttendancePage() {
               </p>
             </div>
           ))}
-
           {filteredMembers.length === 0 && (
             <p className="text-center text-gray-400 col-span-full text-sm">
               No members found
