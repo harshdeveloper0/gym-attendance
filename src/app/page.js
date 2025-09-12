@@ -11,7 +11,7 @@ export default function Home() {
   ];
 
   return (
-    <div className="min-h-screen flex items-center justify-center ">
+    <div className="min-h-[80vh] p-5 flex items-center justify-center ">
       <div className="p-10 rounded-3xl bg-white/10 shadow-2xl border border-white/20 backdrop-blur-xl">
         <h1 className="text-3xl font-bold text-white text-center mb-8 drop-shadow-lg">
           Attendance Management System
