@@ -91,8 +91,8 @@ export default function AttendancePage() {
   const totalNotMarked = filteredMembers.length - totalMarked;
 
   return (
-    <div className="flex mt-[-50px] justify-center items-start p-4 sm:p-6">
-      <div className="w-full max-w-7xl bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl rounded-2xl p-4 sm:p-6">
+    <div className="flex h-[87vh] mt-[-50px] overflow-auto justify-center items-start p-4 sm:p-6">
+      <div className="w-full overflow-auto max-w-7xl bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl rounded-2xl p-4 sm:p-6">
         {/* header */}
         <div
           className={`sticky top-0 z-20 mb-4 transition-opacity duration-300 ${

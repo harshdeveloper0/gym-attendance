@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Pencil, Trash2, PlusCircle, ClipboardList } from "lucide-react";
+import { Pencil, Trash2, PlusCircle, ClipboardList, X } from "lucide-react";
 
 export default function Members() {
   const [members, setMembers] = useState([]);
@@ -11,39 +11,38 @@ export default function Members() {
   const [counts, setCounts] = useState({ morning: 0, evening: 0, total: 0 });
   const [showHeader, setShowHeader] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [popupMember, setPopupMember] = useState(null); // ✅ store full member data
 
   const getMembers = async () => {
-    let url = "/api/member";
-    if (sessionFilter !== "All") url += `?session=${sessionFilter}`;
-    const res = await fetch(url);
-    const data = await res.json();
-    const allMembers = data.data.members || [];
-
+    setLoading(true);
     try {
-      const resAll = await fetch("/api/member");
-      const dataAll = await resAll.json();
-      const allData = dataAll.data.members || [];
+      let url = "/api/member?limit=0";
+      if (sessionFilter !== "All") url += `&session=${sessionFilter}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      const allMembers = data.data.members || [];
       setCounts({
-        morning: allData.filter((m) => m.session === "Morning").length,
-        evening: allData.filter((m) => m.session === "Evening").length,
-        total: allData.length,
+        morning: allMembers.filter((m) => m.session === "Morning").length,
+        evening: allMembers.filter((m) => m.session === "Evening").length,
+        total: allMembers.length,
       });
+      setMembers(
+        allMembers.sort((a, b) =>
+          b.isActive === a.isActive ? 0 : b.isActive ? 1 : -1
+        )
+      );
     } catch (err) {
-      console.error("Count fetch failed", err);
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
-
-    setMembers(
-      allMembers.sort((a, b) =>
-        b.isActive === a.isActive ? 0 : b.isActive ? 1 : -1
-      )
-    );
   };
 
   useEffect(() => {
     getMembers();
   }, [sessionFilter]);
 
-  // Fade header on scroll
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
@@ -58,6 +57,7 @@ export default function Members() {
     if (confirm("Are you sure you want to delete this member?")) {
       await fetch(`/api/member/${id}`, { method: "DELETE" });
       getMembers();
+      setPopupMember(null);
     }
   };
 
@@ -69,11 +69,10 @@ export default function Members() {
 
   return (
     <div className="flex justify-center mt-[-50px] items-start p-3 sm:p-6">
-      <div className="w-full max-w-7xl h-[80vh] overflow-auto bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl rounded-2xl p-3 sm:p-4">
-        
+      <div className="w-full max-w-7xl h-[87vh] overflow-auto bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl rounded-2xl p-3 sm:p-4">
         {/* Header */}
         <div
-          className={`sticky top-0 z-20 mb-4 bg-gray-900/80 backdrop-blur-lg rounded-xl p-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between transition-opacity duration-500 ${
+          className={` top-0 z-20 mb-4 bg-gray-900/80 backdrop-blur-lg rounded-xl p-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between transition-opacity duration-500 ${
             showHeader ? "opacity-100" : "opacity-0"
           }`}
         >
@@ -114,83 +113,173 @@ export default function Members() {
           </div>
         </div>
 
+        {/* Loader */}
+        {loading && (
+          <div className="flex justify-center items-center py-8">
+            <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+            <span className="text-white ml-3">Loading members...</span>
+          </div>
+        )}
+
         {/* Counts */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-          <div className="bg-blue-600/20 text-white p-3 rounded-lg text-center text-sm">
-            🌅 Morning <br />
-            <span className="text-lg sm:text-xl font-bold">{counts.morning}</span>
+        {!loading && (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+            <div className="bg-blue-600/20 text-white p-3 rounded-lg text-center text-sm">
+              🌅 Morning <br />
+              <span className="text-lg sm:text-xl font-bold">{counts.morning}</span>
+            </div>
+            <div className="bg-purple-600/20 text-white p-3 rounded-lg text-center text-sm">
+              🌆 Evening <br />
+              <span className="text-lg sm:text-xl font-bold">{counts.evening}</span>
+            </div>
+            <div className="bg-teal-600/20 text-white p-3 rounded-lg text-center text-sm">
+              👥 Total <br />
+              <span className="text-lg sm:text-xl font-bold">{counts.total}</span>
+            </div>
           </div>
-          <div className="bg-purple-600/20 text-white p-3 rounded-lg text-center text-sm">
-            🌆 Evening <br />
-            <span className="text-lg sm:text-xl font-bold">{counts.evening}</span>
-          </div>
-          <div className="bg-teal-600/20 text-white p-3 rounded-lg text-center text-sm">
-            👥 Total <br />
-            <span className="text-lg sm:text-xl font-bold">{counts.total}</span>
-          </div>
-        </div>
+        )}
 
         {/* Members List */}
-        <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
-          {filteredMembers.map((m) => (
-            <div
-              key={m._id}
-              className="bg-gray-800/70 border border-gray-700 rounded-lg p-3 flex flex-col gap-2 shadow hover:shadow-md transition text-sm"
-            >
-              <div className="flex items-center gap-2">
-                <Image
-                  src={m.image || "/default-member.avif"}
-                  alt={m.name}
-                  width={40}
-                  height={40}
-                  className="rounded-full border border-white/20 object-cover"
-                />
-                <div>
-                  <h2 className="text-white font-medium text-sm break-words">{m.name}</h2>
-                  <p className="text-gray-400 text-xs">{m.phone}</p>
+        {!loading && (
+          <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
+            {filteredMembers.map((m) => (
+              <div
+                key={m._id}
+                className="bg-gray-800/70 border border-gray-700 rounded-lg p-3 flex flex-col gap-2 shadow hover:shadow-md transition text-sm"
+              >
+                <div
+                  className="flex items-center gap-2 cursor-pointer"
+                  onClick={() => setPopupMember(m)}
+                >
+                  <Image
+                    src={m.image || "/default-member.avif"}
+                    alt={m.name}
+                    width={40}
+                    height={40}
+                    className="rounded-full border border-white/20 object-cover"
+                  />
+                  <div>
+                    <h2 className="text-white font-medium text-sm break-words">{m.name}</h2>
+                    <p className="text-gray-400 text-xs">{m.phone}</p>
+                  </div>
+                </div>
+                <div className="text-xs text-gray-300 space-y-0.5 break-words">
+                  <p>Email: {m.email || "-"}</p>
+                  <p>
+                    Fee:{" "}
+                    {m.feeStatus === "Paid" ? (
+                      <span className="text-green-400">Paid</span>
+                    ) : (
+                      <span className="text-red-400">Unpaid</span>
+                    )}
+                  </p>
+                  <p>Session: <span className="text-blue-300">{m.session}</span></p>
+                  <p>
+                    Status:{" "}
+                    {m.isActive ? (
+                      <span className="text-green-400">✔ Active</span>
+                    ) : (
+                      <span className="text-red-400">✖ Inactive</span>
+                    )}
+                  </p>
+                  <p>Note: {m.note || "-"}</p>
+                </div>
+                <div className="flex justify-end gap-2 mt-1 text-xs flex-wrap">
+                  <Link
+                    href={`/edit-member/${m._id}`}
+                    className="text-blue-400 hover:text-blue-300 flex items-center gap-1"
+                  >
+                    <Pencil size={14} /> Edit
+                  </Link>
+                  <button
+                    onClick={() => deleteMember(m._id)}
+                    className="text-red-400 hover:text-red-300 flex items-center gap-1"
+                  >
+                    <Trash2 size={14} /> Delete
+                  </button>
                 </div>
               </div>
-              <div className="text-xs text-gray-300 space-y-0.5 break-words">
-                <p>Email: {m.email || "-"}</p>
+            ))}
+          </div>
+        )}
+
+        {!loading && filteredMembers.length === 0 && (
+          <p className="text-center text-white/60 mt-6 text-sm">No members found.</p>
+        )}
+
+        {/* ✅ Popup Modal with all details */}
+        {popupMember && (
+          <div
+            className="fixed inset-0 bg-black/70 flex items-center justify-center z-[50]"
+            onClick={() => setPopupMember(null)}
+          >
+            <div
+              className="relative bg-gray-900 text-white rounded-xl p-6 w-[90%] max-w-lg max-h-[90%] overflow-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Close Button */}
+              <button
+                className="absolute top-2 right-2 text-white hover:text-gray-300"
+                onClick={() => setPopupMember(null)}
+              >
+                <X size={28} />
+              </button>
+
+              {/* Image */}
+              <div className="flex justify-center mb-4">
+                <Image
+                  src={popupMember.image || "/default-member.avif"}
+                  alt={popupMember.name}
+                  width={200}
+                  height={200}
+                  className="rounded-lg object-cover"
+                />
+              </div>
+
+              {/* Buttons on Left and Right Corners */}
+              <div className="absolute bottom-4 left-4">
+                <Link
+                  href={`/edit-member/${popupMember._id}`}
+                  className="flex items-center gap-1 bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg shadow text-sm"
+                >
+                  <Pencil size={16} /> Edit
+                </Link>
+              </div>
+              <div className="absolute bottom-4 right-4">
+                <button
+                  onClick={() => deleteMember(popupMember._id)}
+                  className="flex items-center gap-1 bg-red-600 hover:bg-red-500 text-white px-3 py-1.5 rounded-lg shadow text-sm"
+                >
+                  <Trash2 size={16} /> Delete
+                </button>
+              </div>
+
+              {/* Details */}
+              <h2 className="text-xl font-bold mb-2 text-center">{popupMember.name}</h2>
+              <p className="text-center text-gray-300 mb-4">{popupMember.phone}</p>
+              <div className="space-y-2 text-sm">
+                <p><span className="font-semibold">Email:</span> {popupMember.email || "-"}</p>
+                <p><span className="font-semibold">Session:</span> {popupMember.session}</p>
                 <p>
-                  Fee:{" "}
-                  {m.feeStatus === "Paid" ? (
+                  <span className="font-semibold">Fee:</span>{" "}
+                  {popupMember.feeStatus === "Paid" ? (
                     <span className="text-green-400">Paid</span>
                   ) : (
                     <span className="text-red-400">Unpaid</span>
                   )}
                 </p>
-                <p>Session: <span className="text-blue-300">{m.session}</span></p>
                 <p>
-                  Status:{" "}
-                  {m.isActive ? (
+                  <span className="font-semibold">Status:</span>{" "}
+                  {popupMember.isActive ? (
                     <span className="text-green-400">✔ Active</span>
                   ) : (
                     <span className="text-red-400">✖ Inactive</span>
                   )}
                 </p>
-                <p>Note: {m.note || "-"}</p>
-              </div>
-              <div className="flex justify-end gap-2 mt-1 text-xs flex-wrap">
-                <Link
-                  href={`/edit-member/${m._id}`}
-                  className="text-blue-400 hover:text-blue-300 flex items-center gap-1"
-                >
-                  <Pencil size={14} /> Edit
-                </Link>
-                <button
-                  onClick={() => deleteMember(m._id)}
-                  className="text-red-400 hover:text-red-300 flex items-center gap-1"
-                >
-                  <Trash2 size={14} /> Delete
-                </button>
+                <p><span className="font-semibold">Note:</span> {popupMember.note || "-"}</p>
               </div>
             </div>
-          ))}
-        </div>
-
-        {filteredMembers.length === 0 && (
-          <p className="text-center text-white/60 mt-6 text-sm">No members found.</p>
+          </div>
         )}
       </div>
     </div>

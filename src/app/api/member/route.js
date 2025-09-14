@@ -16,7 +16,7 @@ export async function POST(request) {
       feeStatus = "Pending", 
       imageBase64, 
       note,
-      session = "Morning" // 👈 added default
+      session = "Morning"
     } = body;
 
     if (!name || !phone) {
@@ -46,7 +46,7 @@ export async function POST(request) {
       feeStatus,
       image: imageUrl,
       note,
-      session // 👈 save session
+      session
     });
 
     return NextResponse.json({
@@ -67,11 +67,11 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
 
     const page = Number(searchParams.get("page")) || 1;
-    const limit = Number(searchParams.get("limit")) || 10;
+    const limit = Number(searchParams.get("limit"))
     const search = searchParams.get("search") || "";
     const feeStatus = searchParams.get("feeStatus") || "";
     const active = searchParams.get("isActive");
-    const session = searchParams.get("session") || ""; // 👈 filter by session
+    const session = searchParams.get("session") || "";
 
     let query = {};
 
@@ -89,7 +89,12 @@ export async function GET(request) {
     if (session) query.session = session;
 
     const skip = (page - 1) * limit;
-    const members = await Member.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit);
+    const cursor = Member.find(query).sort({ createdAt: -1 });
+
+    const members = limit === 0 
+      ? await cursor // no limit
+      : await cursor.skip(skip).limit(limit);
+
     const total = await Member.countDocuments(query);
 
     return NextResponse.json({
@@ -99,9 +104,9 @@ export async function GET(request) {
         members,
         pagination: {
           currentPage: page,
-          totalPages: Math.ceil(total / limit),
+          totalPages: limit === 0 ? 1 : Math.ceil(total / limit),
           totalMembers: total,
-          hasNextPage: page * limit < total,
+          hasNextPage: limit === 0 ? false : page * limit < total,
           hasPrevPage: page > 1
         }
       }
