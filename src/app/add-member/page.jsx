@@ -56,7 +56,7 @@ export default function AddMember() {
 
   return (
     <div className="flex items-center justify-center mt-[-50px] backdrop-blur-lg border-b border-white/20 shadow-2xl rounded-2xl p-6">
-      <div className="w-full max-w-lg h-[80vh] overflow-auto bg-white/10 backdrop-blur-md border border-white/20 shadow-xl rounded-2xl p-8 text-white">
+      <div className="w-full bg-[#323232] max-w-lg h-[80vh] overflow-auto  backdrop-blur-md border border-white/20 shadow-xl rounded-2xl p-8 text-white">
         {/* Title and Back Link */}
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold">➕ Add New Member</h2>
