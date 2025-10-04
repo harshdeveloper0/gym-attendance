@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ArrowLeft, Upload } from "lucide-react";
 import Image from "next/image";
 import toast from "react-hot-toast";
+import AdminGuard from "@/components/AdminGuard";
 
 export default function AddMember() {
   const router = useRouter();
@@ -55,11 +56,13 @@ export default function AddMember() {
   };
 
   return (
-    <div className="flex items-center justify-center mt-[-50px] backdrop-blur-lg border-b border-white/20 shadow-2xl rounded-2xl p-6">
-      <div className="w-full bg-[#323232] max-w-lg h-[80vh] overflow-auto  backdrop-blur-md border border-white/20 shadow-xl rounded-2xl p-8 text-white">
+    
+    <div className="flex items-center  justify-center  backdrop-blur-lg border-b border-white/20 shadow-2xl rounded-2xl p-3">
+      <AdminGuard>
+      <div className="w-full bg-[#323232] max-w-lg mt-[140px] h-[88vh] overflow-auto  backdrop-blur-md border border-white/20 shadow-xl rounded-2xl p-4 text-white">
         {/* Title and Back Link */}
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold">➕ Add New Member</h2>
+          <h2 className="text-xl min:text-3xl font-bold">➕ Add New Member</h2>
           <Link
             href="/members"
             className="text-blue-300 hover:text-white text-sm flex items-center gap-1"
@@ -198,6 +201,7 @@ export default function AddMember() {
           </div>
         </form>
       </div>
+      </AdminGuard>
     </div>
   );
 }

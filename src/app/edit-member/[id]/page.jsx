@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import toast from "react-hot-toast";
+import AdminGuard from "@/components/AdminGuard";
 
 export default function EditMemberPage() {
   const { id } = useParams();
@@ -87,6 +88,7 @@ export default function EditMemberPage() {
 
   return (
     <div className=" flex items-center justify-center mt-[-50px] backdrop-blur-lg border-b border-white/20 shadow-2xl rounded-2xl  p-6">
+      <AdminGuard>
       <div className="w-full  max-w-lg h-[80vh] overflow-auto bg-white/10 backdrop-blur-md border border-white/20 shadow-xl rounded-2xl p-8 text-white">
 
         {/* Profile Image Preview */}
@@ -218,6 +220,7 @@ export default function EditMemberPage() {
           </div>
         </form>
       </div>
+      </AdminGuard>
     </div>
   );
 }

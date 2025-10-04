@@ -17,9 +17,14 @@ const AttendanceSchema = new mongoose.Schema({
   status: {
     type: String,
     enum: ['Present', 'Absent'],
-    required: true
+    required: true,
+    default: 'Absent'
   },
   notes: {
+    type: String,
+    default: ''
+  },
+  image: {           // ✅ Added image field
     type: String,
     default: ''
   }

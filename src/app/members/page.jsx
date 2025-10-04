@@ -1,9 +1,11 @@
-"use client";
+'use client';
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Pencil, Trash2, PlusCircle, ClipboardList, X } from "lucide-react";
 import Loader from "@/components/Loader";
+import ProtectedRoute from "@/components/ProtectedRoutes";
+import AdminGuard from "@/components/AdminGuard";
 
 export default function Members() {
   const [members, setMembers] = useState([]);
@@ -11,7 +13,6 @@ export default function Members() {
   const [sessionFilter, setSessionFilter] = useState("All");
   const [counts, setCounts] = useState({ morning: 0, evening: 0, total: 0 });
   const [showHeader, setShowHeader] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
   const [popupMember, setPopupMember] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -44,16 +45,6 @@ export default function Members() {
     getMembers();
   }, [sessionFilter]);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      setShowHeader(currentScrollY < lastScrollY || currentScrollY < 10);
-      setLastScrollY(currentScrollY);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [lastScrollY]);
-
   const deleteMember = async (id) => {
     if (confirm("Are you sure you want to delete this member?")) {
       await fetch(`/api/member/${id}`, { method: "DELETE" });
@@ -69,11 +60,17 @@ export default function Members() {
   );
 
   return (
-    <>
-      {loading && <Loader />}
-      <div className="flex flex-col items-center mt-[-50px] p-3 sm:p-6">
+    <AdminGuard>
+      {/* Loader overlay */}
+      {loading && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-[9999]">
+          <Loader size={60} color="#36d7b7" />
+        </div>
+      )}
+
+      <div className="flex flex-col items-center sm:mt-[120px] mt-[140px] p-3 sm:p-6">
         {/* Main container */}
-        <div className="w-full max-w-7xl h-[87vh] overflow-auto bg-[#323232] backdrop-blur-lg border border-white/20 shadow-2xl rounded-2xl p-3 sm:p-4">
+        <div className="w-full max-w-7xl h-[87vh] overflow-auto bg-[#323232] backdrop-blur-lg border border-white/20 shadow-2xl rounded-2xl p-3 sm:p-4 relative">
           {/* Header */}
           <div
             className={`top-0 z-20 mb-4 backdrop-blur-lg rounded-xl p-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between transition-opacity duration-500 ${
@@ -138,7 +135,7 @@ export default function Members() {
             {filteredMembers.map((m) => (
               <div
                 key={m._id}
-                className="bg-gray-800/70 border border-gray-700 rounded-lg p-3 flex flex-col gap-2 shadow hover:shadow-md transition text-sm"
+                className="bg-gray-800/70 border border-gray-700 rounded-lg p-3 flex flex-col gap-2 shadow hover:shadow-md transition text-sm relative"
               >
                 <div
                   className="flex items-center gap-2 cursor-pointer"
@@ -202,8 +199,8 @@ export default function Members() {
 
         {/* Popup */}
         {popupMember && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="bg-gray-900 text-white border border-gray-700 rounded-xl p-5 w-[90%] max-w-md shadow-2xl">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9998]">
+            <div className="bg-gray-900 text-white border border-gray-700 rounded-xl p-5 w-[90%] max-w-md shadow-2xl relative">
               <div className="flex justify-between items-center mb-4">
                 <div className="flex items-center gap-3">
                   <Image
@@ -268,6 +265,6 @@ export default function Members() {
           </div>
         )}
       </div>
-    </>
+    </AdminGuard>
   );
 }

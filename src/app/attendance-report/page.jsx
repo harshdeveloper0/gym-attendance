@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
-import Loader from "@/components/Loader"; // ✅ Import loader
+import Loader from "@/components/Loader";
+import AdminGuard from "@/components/AdminGuard";
 
 export default function AttendanceDashboard() {
   const [attendance, setAttendance] = useState([]);
@@ -13,6 +14,7 @@ export default function AttendanceDashboard() {
       try {
         const res = await fetch("/api/attendance");
         const data = await res.json();
+        console.log("Raw attendance data:", data); 
         if (data.success) {
           setAttendance(data.attendance);
         }
@@ -25,7 +27,6 @@ export default function AttendanceDashboard() {
     fetchData();
   }, []);
 
-  // Filter by selected date and search
   const filtered = attendance.filter((a) => {
     const matchesDate = selectedDate ? a.date === selectedDate : true;
     const matchesSearch = searchTerm
@@ -40,11 +41,12 @@ export default function AttendanceDashboard() {
 
   return (
     <>
-      {loading && <Loader />} {/* ✅ Loader shows while fetching */}
-      <div className="h-[90vh] mt-[-65px] text-white p-4">
+    <AdminGuard>
+      {loading && <Loader />}
+      <div className="h-[90vh] mt-[120px] text-white p-4">
         <div className="mx-auto max-w-7xl space-y-8">
           <h1 className="text-3xl sm:text-4xl font-bold text-center mb-8">
-            Attendance Dashboard
+            Attendance Report
           </h1>
 
           {/* Filters and Stats */}
@@ -93,6 +95,7 @@ export default function AttendanceDashboard() {
                   <table className="min-w-full text-left">
                     <thead className="bg-gray-700 text-gray-300">
                       <tr>
+                        <th className="p-4 font-medium">Photo</th>
                         <th className="p-4 font-medium">Member Name</th>
                         <th className="p-4 font-medium">Status</th>
                         <th className="p-4 font-medium">Date</th>
@@ -105,6 +108,13 @@ export default function AttendanceDashboard() {
                           key={a._id}
                           className="hover:bg-gray-700 transition-colors duration-200"
                         >
+                          <td className="p-4">
+                            <img
+                              src={a.profilePhoto || "/logo.jpeg"}
+                              alt={a.memberName}
+                              className="w-10 h-10 rounded-full object-cover"
+                            />
+                          </td>
                           <td className="p-4 font-medium text-gray-200">
                             {a.memberName}
                           </td>
@@ -131,6 +141,7 @@ export default function AttendanceDashboard() {
           </div>
         </div>
       </div>
+      </AdminGuard>
     </>
   );
 }

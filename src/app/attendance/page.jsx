@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import Loader from "@/components/Loader"; // ✅ Import loader
 import { Search, Calendar, CheckCircle2, XCircle, Users } from "lucide-react";
+import AdminGuard from "@/components/AdminGuard";
 
 export default function AttendancePage() {
   const [members, setMembers] = useState([]);
@@ -44,17 +45,6 @@ export default function AttendancePage() {
     fetchData();
   }, [selectedDate]);
 
-  // Fade header on scroll
-  useEffect(() => {
-    const handleScroll = () => {
-      const scrollY = window.scrollY;
-      if (scrollY > lastScroll) setFadeHeader(true);
-      else setFadeHeader(false);
-      setLastScroll(scrollY);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [lastScroll]);
 
   const markAttendance = async (memberId, status) => {
     try {
@@ -89,8 +79,15 @@ export default function AttendancePage() {
 
   return (
     <>
-      {loading && <Loader />} {/* ✅ Show loader while fetching */}
-      <div className="flex h-[87vh] mt-[-50px] overflow-auto justify-center items-start p-4 sm:p-6">
+    <AdminGuard>
+      {/* Loader Overlay */}
+      {loading && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-[9999]">
+          <Loader size={60} color="#36d7b7" />
+        </div>
+      )}
+
+      <div className="flex h-[88vh] mt-[150px] overflow-auto justify-center items-start p-4 sm:p-6 relative">
         <div className="w-full max-w-7xl bg-[#323232] backdrop-blur-lg border border-white/20 shadow-2xl rounded-2xl p-4 sm:p-6">
           {/* Header */}
           <div
@@ -243,6 +240,7 @@ export default function AttendancePage() {
           </div>
         </div>
       </div>
+      </AdminGuard>
     </>
   );
 }
