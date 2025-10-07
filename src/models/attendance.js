@@ -24,12 +24,14 @@ const AttendanceSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
-  image: {           // ✅ Added image field
+  image: {
     type: String,
     default: ''
   }
 }, {
   timestamps: true
 });
+
+AttendanceSchema.index({ memberId: 1, date: 1 }, { unique: true });
 
 export default mongoose.models.Attendance || mongoose.model('Attendance', AttendanceSchema);

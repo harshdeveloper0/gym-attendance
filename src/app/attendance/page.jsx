@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import Link from "next/link";
 import Image from "next/image";
-import Loader from "@/components/Loader"; // ✅ Import loader
-import { Search, Calendar, CheckCircle2, XCircle, Users } from "lucide-react";
+import Loader from "@/components/Loader";
+import { Search, Calendar, CheckCircle2, Users } from "lucide-react";
 import AdminGuard from "@/components/AdminGuard";
 
 export default function AttendancePage() {
@@ -16,36 +16,41 @@ export default function AttendancePage() {
   );
   const [searchTerm, setSearchTerm] = useState("");
   const [sessionFilter, setSessionFilter] = useState("All");
-  const [fadeHeader, setFadeHeader] = useState(false);
-  const [lastScroll, setLastScroll] = useState(0);
-  const [loading, setLoading] = useState(true); // ✅ Loading state
+  const [loading, setLoading] = useState(true);
 
-  // Fetch Members & Attendance
+  // Fetch members & existing attendance
   useEffect(() => {
     const fetchData = async () => {
       try {
-        setLoading(true); // Start loading
-        const res = await axios.get(`/api/member`);
-        setMembers(res.data.data.members);
+        setLoading(true);
+        const memberRes = await axios.get(`/api/member`);
+        const allMembers = memberRes.data.data.members;
 
         const attRes = await axios.get(`/api/attendance?date=${selectedDate}`);
-        const records = attRes.data.data.attendance;
+        const records =
+          attRes.data.data?.attendance || attRes.data.attendance || [];
 
-        const attData = {};
-        records.forEach((r) => {
-          attData[r.memberId] = r.status;
+        const defaultMap = {};
+        allMembers.forEach((m) => {
+          defaultMap[m._id] = "Absent";
         });
-        setAttendanceMap(attData);
+
+        records.forEach((r) => {
+          defaultMap[r.memberId] = r.status;
+        });
+
+        setMembers(allMembers);
+        setAttendanceMap(defaultMap);
       } catch (err) {
-        console.error("Error:", err);
+        console.error("Error fetching attendance:", err);
       } finally {
-        setLoading(false); // End loading
+        setLoading(false);
       }
     };
     fetchData();
   }, [selectedDate]);
 
-
+  //  Mark Attendance
   const markAttendance = async (memberId, status) => {
     try {
       setAttendanceMap((prev) => ({ ...prev, [memberId]: status }));
@@ -59,6 +64,7 @@ export default function AttendancePage() {
     }
   };
 
+  //  Filters
   const filteredMembers = members.filter((m) => {
     const matchesSearch =
       m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -68,61 +74,82 @@ export default function AttendancePage() {
     return matchesSearch && matchesSession;
   });
 
-  const totalPresent = filteredMembers.filter(
-    (m) => attendanceMap[m._id] === "Present"
+  //  Counts
+  const totalPresent = Object.values(attendanceMap).filter(
+    (s) => s === "Present"
   ).length;
-  const totalAbsent = filteredMembers.filter(
-    (m) => attendanceMap[m._id] === "Absent"
+  const totalAbsent = Object.values(attendanceMap).filter(
+    (s) => s === "Absent"
   ).length;
-  const totalMarked = totalPresent + totalAbsent;
-  const totalNotMarked = filteredMembers.length - totalMarked;
+  const totalMembers = members.length;
+
+  //  Handle Remaining Absent (Fixed)
+  const handleAutoAbsent = async () => {
+    try {
+      const res = await fetch("/api/attendance/auto-absent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ date: selectedDate }), // ✅ FIX — Send selected date
+      });
+
+      const data = await res.json();
+      alert(data.message);
+
+      // ✅ Optional: refresh attendance state after marking absents
+      const attRes = await axios.get(`/api/attendance?date=${selectedDate}`);
+      const records =
+        attRes.data.data?.attendance || attRes.data.attendance || [];
+      const updatedMap = { ...attendanceMap };
+      records.forEach((r) => {
+        updatedMap[r.memberId] = r.status;
+      });
+      setAttendanceMap(updatedMap);
+    } catch (err) {
+      console.error("Manual auto-absent error:", err);
+      alert("Failed to mark absents manually");
+    }
+  };
 
   return (
-    <>
     <AdminGuard>
-      {/* Loader Overlay */}
       {loading && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-[9999]">
           <Loader size={60} color="#36d7b7" />
         </div>
       )}
 
-      <div className="flex h-[88vh] mt-[150px] overflow-auto justify-center items-start p-4 sm:p-6 relative">
-        <div className="w-full max-w-7xl bg-[#323232] backdrop-blur-lg border border-white/20 shadow-2xl rounded-2xl p-4 sm:p-6">
+      <div className="flex h-[88vh] mt-[130px] overflow-auto justify-center items-start p-6">
+        <div className="w-full max-w-7xl bg-[#1c1c1c] border border-white/10 rounded-2xl p-6 shadow-2xl">
           {/* Header */}
-          <div
-            className={`top-0 z-20 mb-4 transition-opacity duration-300 ${
-              fadeHeader ? "opacity-0" : "opacity-100"
-            } backdrop-blur-lg rounded-xl p-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between`}
-          >
-            <h1 className="text-lg font-bold text-white flex items-center gap-2">
-              <Users size={22} className="text-blue-400" /> Attendance
+          <div className="flex flex-wrap justify-between items-center mb-6 gap-3">
+            <h1 className="text-2xl font-semibold text-white flex items-center gap-2">
+              <Users size={24} className="text-blue-500" /> Attendance Dashboard
             </h1>
 
-            <div className="flex flex-wrap gap-2 items-center">
+            <div className="flex flex-wrap gap-3 items-center">
               {/* Search */}
-              <div className="relative w-40 sm:w-48">
+              <div className="relative w-44 sm:w-56">
                 <Search
                   size={16}
                   className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
                 />
                 <input
                   type="text"
-                  placeholder="Search..."
+                  placeholder="Search members..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full bg-gray-800 border border-gray-700 text-white pl-9 pr-3 py-1.5 rounded-lg placeholder-gray-400 focus:ring-2 focus:ring-blue-500 text-sm"
+                  className="w-full bg-gray-900 border border-gray-700 text-white pl-9 pr-3 py-2 rounded-lg placeholder-gray-400 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                 />
               </div>
 
               {/* Date Picker */}
-              <div className="flex items-center gap-2 bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm">
+              <div className="flex items-center gap-2 bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white">
                 <Calendar size={16} className="text-gray-300" />
                 <input
                   type="date"
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
-                  className="bg-transparent text-white focus:outline-none cursor-pointer text-sm"
+                  className="bg-transparent focus:outline-none cursor-pointer text-sm"
                 />
               </div>
 
@@ -130,64 +157,68 @@ export default function AttendancePage() {
               <select
                 value={sessionFilter}
                 onChange={(e) => setSessionFilter(e.target.value)}
-                className="bg-gray-800 border border-gray-700 text-white px-3 py-1.5 rounded-lg text-sm cursor-pointer"
+                className="bg-gray-900 border border-gray-700 text-white px-3 py-2 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
               >
-                <option value="All">All Members</option>
+                <option value="All">All Sessions</option>
                 <option value="Morning">Morning</option>
                 <option value="Evening">Evening</option>
               </select>
 
-              {/* Members Page */}
+              {/*  FIXED: Mark Remaining Absent Button */}
+              <button
+                onClick={handleAutoAbsent}
+                className="bg-gradient-to-r from-gray-700 to-gray-600 hover:from-gray-600 hover:to-gray-500 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-md hover:shadow-blue-500/20 transition"
+              >
+                Mark Remaining Absent
+              </button>
+
+              {/* Members Button */}
               <Link
                 href="/members"
-                className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg shadow text-sm"
+                className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm shadow transition"
               >
-                Members
+                Manage Members
               </Link>
             </div>
           </div>
 
-          {/* Attendance Summary */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4 text-center">
-            <div className="bg-green-600/20 border border-green-500/30 p-2 rounded-lg">
-              <p className="text-green-400 font-bold">{totalPresent}</p>
+          {/* Summary */}
+          <div className="grid grid-cols-3 sm:grid-cols-3 gap-4 mb-6">
+            <div className="bg-green-600/10 border border-green-500/20 p-4 rounded-xl text-center hover:scale-105 transition-transform duration-200">
+              <p className="text-green-400 font-bold text-xl">{totalPresent}</p>
               <p className="text-xs text-gray-300">Present</p>
             </div>
-            <div className="bg-red-600/20 border border-red-500/30 p-2 rounded-lg">
-              <p className="text-red-400 font-bold">{totalAbsent}</p>
+            <div className="bg-red-600/10 border border-red-500/20 p-4 rounded-xl text-center hover:scale-105 transition-transform duration-200">
+              <p className="text-red-400 font-bold text-xl">{totalAbsent}</p>
               <p className="text-xs text-gray-300">Absent</p>
             </div>
-            <div className="bg-yellow-600/20 border border-yellow-500/30 p-2 rounded-lg">
-              <p className="text-yellow-400 font-bold">{totalNotMarked}</p>
-              <p className="text-xs text-gray-300">Not Marked</p>
-            </div>
-            <div className="bg-blue-600/20 border border-blue-500/30 p-2 rounded-lg">
-              <p className="text-blue-400 font-bold">{filteredMembers.length}</p>
-              <p className="text-xs text-gray-300">Total ({sessionFilter})</p>
+            <div className="bg-blue-600/10 border border-blue-500/20 p-4 rounded-xl text-center hover:scale-105 transition-transform duration-200">
+              <p className="text-blue-400 font-bold text-xl">{totalMembers}</p>
+              <p className="text-xs text-gray-300">Total Members</p>
             </div>
           </div>
 
-          {/* Members Grid */}
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {/* Member Grid */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filteredMembers.map((member) => (
               <div
                 key={member._id}
-                className="bg-gray-800/70 border border-gray-700 rounded-lg p-3 shadow hover:shadow-lg transition text-sm"
+                className="bg-gray-900/70 border border-gray-800 rounded-xl p-4 shadow-lg hover:shadow-blue-500/10 transition-all duration-200"
               >
-                <div className="flex items-center gap-3 mb-2">
+                <div className="flex items-center gap-3 mb-3">
                   <Image
                     src={member.image || "/default-member.avif"}
                     alt={member.name}
-                    width={48}
-                    height={48}
-                    className="rounded-full border border-white/20 object-cover"
+                    width={50}
+                    height={50}
+                    className="rounded-full border border-gray-700 object-cover"
                   />
                   <div>
                     <h2 className="text-white font-medium text-sm">
                       {member.name}
                     </h2>
                     <p className="text-gray-400 text-xs">{member.phone}</p>
-                    <p className="text-gray-500 text-xs">
+                    <p className="text-gray-500 text-xs italic">
                       {member.session || "No Session"}
                     </p>
                   </div>
@@ -196,23 +227,13 @@ export default function AttendancePage() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => markAttendance(member._id, "Present")}
-                    className={`flex-1 flex items-center justify-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition ${
+                    className={`flex-1 flex items-center justify-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium transition ${
                       attendanceMap[member._id] === "Present"
                         ? "bg-green-600 text-white"
                         : "bg-white/10 text-green-400 hover:bg-green-500/20"
                     }`}
                   >
                     <CheckCircle2 size={14} /> Present
-                  </button>
-                  <button
-                    onClick={() => markAttendance(member._id, "Absent")}
-                    className={`flex-1 flex items-center justify-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition ${
-                      attendanceMap[member._id] === "Absent"
-                        ? "bg-red-600 text-white"
-                        : "bg-white/10 text-red-400 hover:bg-red-500/20"
-                    }`}
-                  >
-                    <XCircle size={14} /> Absent
                   </button>
                 </div>
 
@@ -222,25 +243,17 @@ export default function AttendancePage() {
                     className={`font-semibold ${
                       attendanceMap[member._id] === "Present"
                         ? "text-green-400"
-                        : attendanceMap[member._id] === "Absent"
-                        ? "text-red-400"
-                        : "text-yellow-400"
+                        : "text-red-400"
                     }`}
                   >
-                    {attendanceMap[member._id] || "Not Marked"}
+                    {attendanceMap[member._id]}
                   </span>
                 </p>
               </div>
             ))}
-            {filteredMembers.length === 0 && !loading && (
-              <p className="text-center text-gray-400 col-span-full text-sm">
-                No members found
-              </p>
-            )}
           </div>
         </div>
       </div>
-      </AdminGuard>
-    </>
+    </AdminGuard>
   );
 }
