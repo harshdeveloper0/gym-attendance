@@ -13,7 +13,7 @@ import {
 
 const Herosection = () => {
   return (
-    <section className="bg-gradient-to-r from-black via-gray-900 to-black text-white min-h-[95vh] mt-[110px] flex flex-col md:flex-row items-center justify-between px-10 md:px-20">
+    <section className="bg-gradient-to-r from-black via-gray-900 to-black text-white sm:h-[91vh] mt-[135px] flex flex-col md:flex-row items-center justify-between px-10 md:px-20">
       {/* Left Section */}
       <div className="flex flex-col gap-6 max-w-xl">
         <h1 className="text-5xl md:text-6xl font-extrabold leading-tight">
